@@ -85,15 +85,6 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
         cordapps = []
         rpcUsers = [[ user: "user1", "password": "test", "permissions": []]]
     }
-    node {
-        name "CN=NodeC,O=NodeC,L=Paris,C=FR"
-        advertisedServices = []
-        p2pPort 10011
-        rpcPort 10012
-        webPort 10013
-        cordapps = []
-        rpcUsers = [[ user: "user1", "password": "test", "permissions": []]]
-    }
 }
 
 // TODO: Make into gradle plugin without any references to Jython

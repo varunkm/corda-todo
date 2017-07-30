@@ -1,6 +1,7 @@
 package com.example.flow;
 
 import com.example.state.IOUState;
+import com.example.state.TodoState;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
 import net.corda.core.contracts.ContractState;
@@ -10,6 +11,7 @@ import net.corda.core.transactions.SignedTransaction;
 import net.corda.testing.node.MockNetwork;
 import net.corda.testing.node.MockNetwork.BasketOfNodes;
 import net.corda.testing.node.MockNetwork.MockNode;
+import org.apache.activemq.artemis.core.transaction.Transaction;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -21,7 +23,7 @@ import java.util.List;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 
-public class IOUFlowTests {
+public class TodoFlowTests {
     private MockNetwork net;
     private MockNode a;
     private MockNode b;
@@ -35,6 +37,8 @@ public class IOUFlowTests {
         // For real nodes this happens automatically, but we have to manually register the flow for tests
         for (MockNode node: nodes.getPartyNodes()) {
             node.registerInitiatedFlow(ExampleFlow.Acceptor.class);
+            node.registerInitiatedFlow(TodoCreateFlow.Acceptor.class);
+            node.registerInitiatedFlow(TodoCompleteFlow.Acceptor.class);
         }
         net.runNetwork();
     }
@@ -47,6 +51,47 @@ public class IOUFlowTests {
     @Rule
     public final ExpectedException exception = ExpectedException.none();
 
+    @Test
+    public void flowRecordsATransactionInBothPartiesVaults() throws Exception {
+        TodoCreateFlow.Initiator flow = new TodoCreateFlow.Initiator("example title","example description",b.info.getLegalIdentity());
+        ListenableFuture<SignedTransaction> future = a.getServices().startFlow(flow).getResultFuture();
+        net.runNetwork();
+        SignedTransaction signedTx = future.get();
+
+        // We check the recorded transaction in both vaults.
+        for (MockNode node : ImmutableList.of(a, b)) {
+            assertEquals(signedTx, node.storage.getValidatedTransactions().getTransaction(signedTx.getId()));
+        }
+    }
+    @Test
+    public void flowCompleteReturnsCompletedFlow() throws Exception {
+        TodoCreateFlow.Initiator flow = new TodoCreateFlow.Initiator("example title","example description",b.info.getLegalIdentity());
+        ListenableFuture<SignedTransaction> future = a.getServices().startFlow(flow).getResultFuture();
+        net.runNetwork();
+        SignedTransaction signedTx = future.get();
+
+        List<TransactionState<ContractState>> states = signedTx.getTx().getOutputs();
+        TransactionState<ContractState> stateTransactionState = states.get(0);
+        TodoState output=(TodoState)stateTransactionState.component1();
+
+        assert !(output.getTodoItem().isComplete());
+        TodoCompleteFlow.Initiator flowComplete = new TodoCompleteFlow.Initiator(output.getLinearId());
+        ListenableFuture<SignedTransaction> futureComplete = b.getServices().startFlow(flowComplete).getResultFuture();
+        net.runNetwork();
+
+        SignedTransaction completeTx = futureComplete.get();
+        states = completeTx.getTx().getOutputs();
+        stateTransactionState = states.get(0);
+        TodoState outputComplete=(TodoState)stateTransactionState.component1();
+
+        assert outputComplete.getTodoItem().isComplete();
+        // We check the recorded transaction in both vaults.
+        for (MockNode node : ImmutableList.of(a, b)) {
+            assertEquals(completeTx, node.storage.getValidatedTransactions().getTransaction(completeTx.getId()));
+        }
+    }
+
+/*
     @Test
     public void flowRejectsInvalidIOUs() throws Exception {
         // The IOUContract specifies that IOUs cannot have negative values.
@@ -112,4 +157,5 @@ public class IOUFlowTests {
             assertEquals(recordedState.getRecipient(), b.info.getLegalIdentity());
         }
     }
+*/
 }

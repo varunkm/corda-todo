@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Compiled and minified CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.99.0/css/materialize.min.css">
+    <meta charset="UTF-8">
+    <title>Corda Todo</title>
+</head>
+<body>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <!-- Compiled and minified JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.99.0/js/materialize.min.js"></script>
+    <nav>
+        <div class="nav-wrapper">
+            <a href="#" class="brand-logo center">Corda Todo</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row"></div>
+        <div class="row">
+            <div id="myItems" class="col s4">
+                <h6>My Items</h6>
+            </div>
+            <div id="myOwned" class="col s4">
+                <h6>My Assigned Items</h6>
+            </div>
+            <div id="myComplete" class="col s4">
+                <h6>My Completed Items</h6>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        var url = '/api/todo/my-todos';
+
+        $.ajax({
+            type: 'GET',
+            url: url,
+            async: false,
+            dataType: 'json',
+            success: function(json) {
+                console.log(json);
+                $.each(json, function(idx, state)
+                {
+                    console.log(state);
+                    console.log(state.state.data.todoItem.title);
+                    $("#myItems").append(
+                        "<div class='card'>"+
+                            "<div class='card-content'>"+
+                                "<span class='card-title'>"+state.state.data.todoItem.title+"</span>"+
+                                "<p>"+state.state.data.todoItem.description+"</p>"+
+                                "<hr>"+
+                                "<p>Owner:"+state.state.data.owner+"</p>"+
+                            "</div>" +
+                        "</div>");
+                });
+            },
+            error: function(e) {
+                console.log(e.message);
+            }
+        });
+    </script>
+
+    <script type="text/javascript">
+        var url = '/api/todo/my-owned-todos';
+
+        $.ajax({
+            type: 'GET',
+            url: url,
+            async: false,
+            dataType: 'json',
+            success: function(json) {
+                console.log(json);
+                $.each(json, function(idx, state)
+                {
+                    console.log(state);
+                    console.log(state.state.data.todoItem.title);
+                    $("#myOwned").append(
+                        "<div class='card'>"+
+                        "<div class='card-content'>"+
+                        "<span class='card-title'>"+state.state.data.todoItem.title+"</span>"+
+                        "<p>"+state.state.data.todoItem.description+"</p>"+
+                        "<hr>"+
+                        "<p>Assignee:"+state.state.data.assignee+"</p>"+
+                        "</div>" +
+                        "</div>");
+                });
+            },
+            error: function(e) {
+                console.log(e.message);
+            }
+        });
+    </script>
+
+    <script type="text/javascript">
+        var url = '/api/todo/my-completed-todos';
+
+        $.ajax({
+            type: 'GET',
+            url: url,
+            async: false,
+            dataType: 'json',
+            success: function(json) {
+                console.log(json);
+                $.each(json, function(idx, state)
+                {
+                    console.log(state);
+                    console.log(state.state.data.todoItem.title);
+                    $("#myComplete").append(
+                        "<div class='card'>"+
+                        "<div class='card-content'>"+
+                        "<span class='card-title'>"+state.state.data.todoItem.title+"</span>"+
+                        "<p>"+state.state.data.todoItem.description+"</p>"+
+                        "<hr>"+
+                        "<p>Owner:"+state.state.data.owner+"</p>"+
+                        "</div>" +
+                        "</div>");
+                });
+            },
+            error: function(e) {
+                console.log(e.message);
+            }
+        });
+    </script>
+
+</body>
+</html>

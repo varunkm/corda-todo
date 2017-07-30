@@ -1,6 +1,7 @@
 package com.example.plugin;
 
 import com.example.api.ExampleApi;
+import com.example.api.TodoApi;
 import com.example.flow.ExampleFlow;
 import com.example.state.IOUState;
 import com.google.common.collect.ImmutableList;
@@ -21,14 +22,14 @@ public class ExamplePlugin implements WebServerPluginRegistry {
     /**
      * A list of classes that expose web APIs.
      */
-    private final List<Function<CordaRPCOps, ?>> webApis = ImmutableList.of(ExampleApi::new);
+    private final List<Function<CordaRPCOps, ?>> webApis = ImmutableList.of(TodoApi::new);
 
     /**
      * A list of directories in the resources directory that will be served by Jetty under /web.
      */
     private final Map<String, String> staticServeDirs = ImmutableMap.of(
-            // This will serve the exampleWeb directory in resources to /web/example
-            "example", getClass().getClassLoader().getResource("exampleWeb").toExternalForm()
+            // This will serve the exampleWeb directory in resources to /web/todo
+            "todo", getClass().getClassLoader().getResource("todoWeb").toExternalForm()
     );
 
     @Override public List<Function<CordaRPCOps, ?>> getWebApis() { return webApis; }
