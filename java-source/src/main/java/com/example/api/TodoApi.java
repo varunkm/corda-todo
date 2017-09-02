@@ -128,10 +128,10 @@ public class TodoApi {
         return filtered;
     }
 
-    @PUT
+    @POST
     @Path("create")
-    public Response createTodo(@QueryParam("title") String title, @QueryParam("description") String description,
-                               @QueryParam("assignee") X500Name assignee)
+    public Response createTodo(@FormParam("title") String title, @FormParam("description") String description,
+                               @FormParam("assignee") X500Name assignee)
     {
         final Party otherParty = services.partyFromX500Name(assignee);
 
@@ -166,7 +166,7 @@ public class TodoApi {
             .build();
     }
 
-    @PUT
+    @POST
     @Path("complete")
     public Response completeTodo(@QueryParam("id") String linearId)
     {

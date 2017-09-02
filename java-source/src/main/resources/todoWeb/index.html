@@ -2,37 +2,86 @@
 <html lang="en">
 <head>
     <!-- Compiled and minified CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.99.0/css/materialize.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.1/css/materialize.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
     <meta charset="UTF-8">
     <title>Corda Todo</title>
 </head>
 <body>
     <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
     <!-- Compiled and minified JavaScript -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.99.0/js/materialize.min.js"></script>
-    <nav>
-        <div class="nav-wrapper">
-            <a href="#" class="brand-logo center">Corda Todo</a>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.1/js/materialize.min.js"></script>
+    <nav class="nav-extended">
+        <div class="nav-wrapper container">
+
+            <a href="#" class="brand-logo">Corda Todo</a>
+
         </div>
     </nav>
 
     <div class="container">
         <div class="row"></div>
-        <div class="row">
-            <div id="myItems" class="col s4">
-                <h6>My Items</h6>
+        <div class="row ">
+            <div id="myItems" class="col s4 ">
+                <h6 class="grey-text">My Todo</h6>
             </div>
             <div id="myOwned" class="col s4">
-                <h6>My Assigned Items</h6>
+                <h6 class="grey-text">My Assigned Items</h6>
             </div>
             <div id="myComplete" class="col s4">
-                <h6>My Completed Items</h6>
+                <h6 class="grey-text">My Completed Items</h6>
+
+            </div>
+        </div>
+        <div class="fixed-action-btn">
+            <a class="btn-floating btn-large red modal-trigger" href="#create-modal">
+                <i class="large material-icons">add</i>
+            </a>
+        </div>
+        <!-- Creation Modal -->
+        <div id="create-modal" class="modal bottom-sheet">
+            <div class="modal-content">
+                <h4>Create a Task</h4>
+                <div class="row">
+                    <form class="col s12" action="/api/todo/create" method="post">
+                        <div class="row">
+                            <div class="input-field col s12">
+                                <input name="title" id="title" type="text">
+                                <label for="title">Title</label>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="input-field col s12">
+                                <textarea name="description" id="description" class="materialize-textarea"></textarea>
+                                <label for="description">Title</label>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="input-field col s12">
+                                <select id="assignee" name="assignee">
+                                    <option value="" disabled selected>Choose assignee</option>
+                                </select>
+                                <label for="assignee" >Assignee</label>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="input-field col s12">
+                                <input type='submit' value='Create'>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="#!" class="modal-action modal-close waves-effect waves-green btn-flat">Agree</a>
             </div>
         </div>
     </div>
 
     <script type="text/javascript">
-        var url = '/api/todo/my-todos';
+        var url = '/api/todo/peers';
 
         $.ajax({
             type: 'GET',
@@ -41,25 +90,53 @@
             dataType: 'json',
             success: function(json) {
                 console.log(json);
-                $.each(json, function(idx, state)
+                $.each(json.peers, function(idx, node)
                 {
-                    console.log(state);
-                    console.log(state.state.data.todoItem.title);
-                    $("#myItems").append(
-                        "<div class='card'>"+
-                            "<div class='card-content'>"+
-                                "<span class='card-title'>"+state.state.data.todoItem.title+"</span>"+
-                                "<p>"+state.state.data.todoItem.description+"</p>"+
-                                "<hr>"+
-                                "<p>Owner:"+state.state.data.owner+"</p>"+
-                            "</div>" +
-                        "</div>");
+                    console.log(node);
+                    var option = "<option value='"+node+"'>"+node+"</option>";
+                    $("#assignee").append(option);
                 });
             },
             error: function(e) {
                 console.log(e.message);
             }
         });
+    </script>
+
+    <script type="text/javascript">
+        var completeBase = '/api/todo/complete?id=';
+
+        var url = '/api/todo/my-todos';
+
+        $.ajax({
+            type: 'GET',
+            url: url,
+            async: false,
+            dataType: 'json',
+            success: function (json) {
+                console.log(json);
+                $.each(json, function (idx, state) {
+                    console.log(state);
+                    console.log(state.state.data.todoItem.title);
+                    var card = "<div class='card'>" +
+                        "<div class='card-content'>" +
+                        "<span class='card-title'>" + state.state.data.todoItem.title + "</span>" +
+                        "<p>" + state.state.data.todoItem.description + "</p>" +
+                        "<hr>" +
+                        "<p>Owner: " + state.state.data.owner + "</p>" +
+                        "<form action = '"+completeBase+state.state.data.linearId.id+"' method='post'>" +
+                            "<input type='submit' value='Complete'>"+
+                        "</form>" +
+                        "</div>" +
+                        "</div>";
+                    $("#myItems").append(card);
+                });
+            },
+            error: function (e) {
+                console.log(e.message);
+            }
+        });
+
     </script>
 
     <script type="text/javascript">
@@ -76,15 +153,20 @@
                 {
                     console.log(state);
                     console.log(state.state.data.todoItem.title);
-                    $("#myOwned").append(
-                        "<div class='card'>"+
+                    var card = "";
+                    if (state.state.data.todoItem.complete)
+                        card = "<div class='card teal white-text'>";
+                    else
+                        card = "<div class='card'>";
+                    card+=
                         "<div class='card-content'>"+
                         "<span class='card-title'>"+state.state.data.todoItem.title+"</span>"+
                         "<p>"+state.state.data.todoItem.description+"</p>"+
                         "<hr>"+
-                        "<p>Assignee:"+state.state.data.assignee+"</p>"+
+                        "<p>Assigned to: "+state.state.data.assignee+"</p>"+
                         "</div>" +
-                        "</div>");
+                        "</div>";
+                    $("#myOwned").append(card);
                 });
             },
             error: function(e) {
@@ -108,12 +190,12 @@
                     console.log(state);
                     console.log(state.state.data.todoItem.title);
                     $("#myComplete").append(
-                        "<div class='card'>"+
+                        "<div class='card teal white-text'>"+
                         "<div class='card-content'>"+
                         "<span class='card-title'>"+state.state.data.todoItem.title+"</span>"+
                         "<p>"+state.state.data.todoItem.description+"</p>"+
                         "<hr>"+
-                        "<p>Owner:"+state.state.data.owner+"</p>"+
+                        "<p>Owner: "+state.state.data.owner+"</p>"+
                         "</div>" +
                         "</div>");
                 });
@@ -121,6 +203,13 @@
             error: function(e) {
                 console.log(e.message);
             }
+        });
+    </script>
+    <script>
+        $(document).ready(function(){
+            // the "href" attribute of the modal trigger must specify the modal ID that wants to be triggered
+            $('.modal').modal();
+            $('select').material_select();
         });
     </script>
 
