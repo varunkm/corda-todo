@@ -1,9 +1,7 @@
 package com.example.api;
 
-import com.example.flow.ExampleFlow;
 import com.example.flow.TodoCompleteFlow;
 import com.example.flow.TodoCreateFlow;
-import com.example.state.IOUState;
 import com.example.state.TodoState;
 import com.google.common.collect.ImmutableMap;
 import kotlin.Pair;
@@ -27,7 +25,6 @@ import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import static java.util.stream.Collectors.toList;
 import static net.corda.client.rpc.UtilsKt.notUsed;
@@ -41,7 +38,7 @@ public class TodoApi {
     private final X500Name myLegalName;
     private final String notaryName = "CN=Controller,O=R3,OU=corda,L=London,C=UK";
 
-    static private final Logger logger = LoggerFactory.getLogger(ExampleApi.class);
+    static private final Logger logger = LoggerFactory.getLogger(TodoApi.class);
 
     public TodoApi(CordaRPCOps services) {
         this.services = services;

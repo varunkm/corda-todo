@@ -1,24 +1,17 @@
 package com.example.plugin;
 
-import com.example.api.ExampleApi;
 import com.example.api.TodoApi;
-import com.example.flow.ExampleFlow;
-import com.example.state.IOUState;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import net.corda.core.identity.Party;
 import net.corda.core.messaging.CordaRPCOps;
 import net.corda.core.node.PluginServiceHub;
 import net.corda.webserver.services.WebServerPluginRegistry;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 
-public class ExamplePlugin implements WebServerPluginRegistry {
+public class TodoPlugin implements WebServerPluginRegistry {
     /**
      * A list of classes that expose web APIs.
      */
