@@ -7,6 +7,7 @@ import com.google.common.collect.ImmutableMap;
 import kotlin.Pair;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
+import net.corda.core.identity.CordaX500Name;
 import net.corda.core.identity.Party;
 import net.corda.core.messaging.CordaRPCOps;
 import net.corda.core.messaging.FlowProgressHandle;
@@ -35,14 +36,14 @@ import static net.corda.client.rpc.UtilsKt.notUsed;
 @Path("todo")
 public class TodoApi {
     private final CordaRPCOps services;
-    private final X500Name myLegalName;
-    private final String notaryName = "CN=Controller,O=R3,OU=corda,L=London,C=UK";
+    private final CordaX500Name myLegalName;
+    private final CordaX500Name notaryName = CordaX500Name.parse("CN=Controller,O=R3,OU=corda,L=London,C=UK");
 
     static private final Logger logger = LoggerFactory.getLogger(TodoApi.class);
 
     public TodoApi(CordaRPCOps services) {
         this.services = services;
-        this.myLegalName = services.nodeIdentity().getLegalIdentity().getName();
+        this.myLegalName = services.nodeInfo().getLegalIdentities().get(0).getName();
     }
 
     /**
@@ -51,7 +52,7 @@ public class TodoApi {
     @GET
     @Path("me")
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, X500Name> whoami() { return ImmutableMap.of("me", myLegalName); }
+    public Map<String, CordaX500Name> whoami() { return ImmutableMap.of("me", myLegalName); }
 
     /**
      * Returns all parties registered with the [NetworkMapService]. These names can be used to look up identities
@@ -60,15 +61,13 @@ public class TodoApi {
     @GET
     @Path("peers")
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, List<X500Name>> getPeers() {
-        Pair<List<NodeInfo>, Observable<NetworkMapCache.MapChange>> nodeInfo = services.networkMapUpdates();
-        notUsed(nodeInfo.getSecond());
+    public Map<String, List<CordaX500Name>> getPeers() {
+        List<NodeInfo> nodeInfo = services.networkMapSnapshot();
         return ImmutableMap.of(
             "peers",
-            nodeInfo.getFirst()
-                .stream()
-                .map(node -> node.getLegalIdentity().getName())
-                .filter(name -> !name.equals(myLegalName) && !(name.toString().equals(notaryName)))
+            nodeInfo.stream()
+                .map(node -> node.getLegalIdentities().get(0).getName())
+                .filter(name -> !(name.toString().equals(notaryName)))
                 .collect(toList()));
     }
 
@@ -128,9 +127,10 @@ public class TodoApi {
     @POST
     @Path("create")
     public Response createTodo(@FormParam("title") String title, @FormParam("description") String description,
-                               @FormParam("assignee") X500Name assignee)
+                               @FormParam("assignee") String assignee)
     {
-        final Party otherParty = services.partyFromX500Name(assignee);
+        CordaX500Name otherPartyName = CordaX500Name.parse(assignee);
+        final Party otherParty = services.wellKnownPartyFromX500Name(otherPartyName);
 
         if (otherParty == null) {
             return Response.status(Response.Status.BAD_REQUEST).build();

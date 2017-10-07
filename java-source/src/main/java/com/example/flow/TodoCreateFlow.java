@@ -1,24 +1,18 @@
 package com.example.flow;
 
 import co.paralleluniverse.fibers.Suspendable;
-import com.example.contract.IOUContract;
-import com.example.model.IOU;
+import com.example.contract.TodoContract;
 import com.example.model.TodoItem;
-import com.example.state.IOUState;
 import com.example.state.TodoState;
+import com.google.common.collect.Sets;
 import net.corda.core.contracts.Command;
 import net.corda.core.contracts.ContractState;
-import net.corda.core.contracts.TransactionType;
 import net.corda.core.flows.*;
 import net.corda.core.identity.AbstractParty;
 import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 import net.corda.core.utilities.ProgressTracker;
-import net.corda.flows.CollectSignaturesFlow;
-import net.corda.flows.FinalityFlow;
-import net.corda.flows.SignTransactionFlow;
-import scala.util.parsing.combinator.testing.Str;
 
 import java.util.stream.Collectors;
 
@@ -80,23 +74,23 @@ public class TodoCreateFlow {
         public SignedTransaction call() throws FlowException
         {
             // Obtain a reference to the notary we want to use.
-            final Party notary = getServiceHub().getNetworkMapCache().getNotaryNodes().get(0).getNotaryIdentity();
+            final Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
 
             // Stage 1.
             progressTracker.setCurrentStep(GENERATING_TRANSACTION);
             // Generate an unsigned transaction.
             TodoItem todo = new TodoItem(title,description,false);
-            Party me = getServiceHub().getMyInfo().getLegalIdentity();
+            Party me = getServiceHub().getMyInfo().getLegalIdentities().get(0);
             TodoState todoState = new TodoState(todo, me, assignee);
 
-            final Command txCommand = new Command(new IOUContract.Commands.Create(),
+            final Command txCommand = new Command(new TodoContract.Commands.Create(),
                 todoState.getParticipants().stream().map(AbstractParty::getOwningKey).collect(Collectors.toList()));
-            final TransactionBuilder txBuilder = new TransactionType.General.Builder(notary).withItems(todoState, txCommand);
+            final TransactionBuilder txBuilder = new TransactionBuilder(notary).withItems(todoState, txCommand);
 
             // Stage 2.
             progressTracker.setCurrentStep(VERIFYING_TRANSACTION);
             // Verify that the transaction is valid.
-            txBuilder.toWireTransaction().toLedgerTransaction(getServiceHub()).verify();
+            txBuilder.toLedgerTransaction(getServiceHub()).verify();
 
             // Stage 3.
             progressTracker.setCurrentStep(SIGNING_TRANSACTION);
@@ -106,31 +100,33 @@ public class TodoCreateFlow {
             // Stage 4.
             progressTracker.setCurrentStep(GATHERING_SIGS);
             // Send the state to the counterparty, and receive it back with their signature.
+            FlowSession otherPartyFlow = initiateFlow(assignee);
+
             final SignedTransaction fullySignedTx = subFlow(
-                new CollectSignaturesFlow(partSignedTx, CollectSignaturesFlow.Companion.tracker()));
+                new CollectSignaturesFlow(partSignedTx, Sets.newHashSet(otherPartyFlow),CollectSignaturesFlow.Companion.tracker()));
 
             // Stage 5.
             progressTracker.setCurrentStep(FINALISING_TRANSACTION);
             // Notarise and record the transaction in both parties' vaults.
-            return subFlow(new FinalityFlow(fullySignedTx)).get(0);
+            return subFlow(new FinalityFlow(fullySignedTx));
         }
     }
 
     @InitiatedBy(Initiator.class)
     public static class Acceptor extends FlowLogic<SignedTransaction> {
 
-        private final Party otherParty;
+        private final FlowSession otherPartyFlow;
 
-        public Acceptor(Party otherParty) {
-            this.otherParty = otherParty;
+        public Acceptor(FlowSession otherPartyFlow) {
+            this.otherPartyFlow = otherPartyFlow;
         }
 
         @Suspendable
         @Override
         public SignedTransaction call() throws FlowException {
             class signTxFlow extends SignTransactionFlow {
-                private signTxFlow(Party otherParty, ProgressTracker progressTracker) {
-                    super(otherParty, progressTracker);
+                private signTxFlow(FlowSession otherPartyFlow, ProgressTracker progressTracker) {
+                    super(otherPartyFlow, progressTracker);
                 }
 
                 @Override
@@ -143,7 +139,7 @@ public class TodoCreateFlow {
                 }
             }
 
-            return subFlow(new signTxFlow(otherParty, SignTransactionFlow.Companion.tracker()));
+            return subFlow(new signTxFlow(otherPartyFlow, SignTransactionFlow.Companion.tracker()));
         }
     }
 }

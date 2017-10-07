@@ -1,10 +1,10 @@
 package com.example.plugin;
 
 import com.example.api.TodoApi;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import net.corda.core.messaging.CordaRPCOps;
-import net.corda.core.node.PluginServiceHub;
 import net.corda.webserver.services.WebServerPluginRegistry;
 
 import java.util.List;
@@ -27,4 +27,6 @@ public class TodoPlugin implements WebServerPluginRegistry {
 
     @Override public List<Function<CordaRPCOps, ?>> getWebApis() { return webApis; }
     @Override public Map<String, String> getStaticServeDirs() { return staticServeDirs; }
+    @Override public void customizeJSONSerialization(ObjectMapper objectMapper) { }
+
 }

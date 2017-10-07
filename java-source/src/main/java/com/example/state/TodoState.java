@@ -60,7 +60,7 @@ public class TodoState implements LinearState{
         return Arrays.asList(owner, assignee);
     }
 
-    @Override public boolean isRelevant(Set<? extends PublicKey> ourKeys) {
+    public boolean isRelevant(Set<? extends PublicKey> ourKeys) {
         final List<PublicKey> partyKeys = Stream.of(owner, assignee)
             .flatMap(party -> getKeys(party.getOwningKey()).stream())
             .collect(toList());
@@ -69,7 +69,6 @@ public class TodoState implements LinearState{
             .anyMatch(partyKeys::contains);
 
     }
-    @Override
     public TodoContract getContract()
     {
         return todoContract;
