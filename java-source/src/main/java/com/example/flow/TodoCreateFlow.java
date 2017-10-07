@@ -7,6 +7,7 @@ import com.example.state.TodoState;
 import com.google.common.collect.Sets;
 import net.corda.core.contracts.Command;
 import net.corda.core.contracts.ContractState;
+import net.corda.core.contracts.StateAndContract;
 import net.corda.core.flows.*;
 import net.corda.core.identity.AbstractParty;
 import net.corda.core.identity.Party;
@@ -85,7 +86,7 @@ public class TodoCreateFlow {
 
             final Command txCommand = new Command(new TodoContract.Commands.Create(),
                 todoState.getParticipants().stream().map(AbstractParty::getOwningKey).collect(Collectors.toList()));
-            final TransactionBuilder txBuilder = new TransactionBuilder(notary).withItems(todoState, txCommand);
+            final TransactionBuilder txBuilder = new TransactionBuilder(notary).withItems(new StateAndContract(todoState,"com.example.contract.TodoContract"), txCommand);
 
             // Stage 2.
             progressTracker.setCurrentStep(VERIFYING_TRANSACTION);

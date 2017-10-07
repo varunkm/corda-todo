@@ -93,7 +93,7 @@ public class TodoCompleteFlow {
 
             final Command txCommand = new Command(new TodoContract.Commands.Complete(),
                 newState.getParticipants().stream().map(AbstractParty::getOwningKey).collect(Collectors.toList()));
-            final TransactionBuilder txBuilder = new TransactionBuilder(notary).withItems(inputState, newState,txCommand);
+            final TransactionBuilder txBuilder = new TransactionBuilder(notary).withItems(inputState, new StateAndContract(newState,"com.example.contract.TodoContract"),txCommand);
 
             // Stage 2.
             progressTracker.setCurrentStep(VERIFYING_TRANSACTION);

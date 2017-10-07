@@ -37,7 +37,7 @@ import static net.corda.client.rpc.UtilsKt.notUsed;
 public class TodoApi {
     private final CordaRPCOps services;
     private final CordaX500Name myLegalName;
-    private final CordaX500Name notaryName = CordaX500Name.parse("CN=Controller,O=R3,OU=corda,L=London,C=UK");
+    private final CordaX500Name notaryName = CordaX500Name.parse("O=Controller,L=London,C=GB");
 
     static private final Logger logger = LoggerFactory.getLogger(TodoApi.class);
 
@@ -103,7 +103,7 @@ public class TodoApi {
         List<StateAndRef<TodoState>> filtered = new ArrayList<>();
         for (StateAndRef<TodoState> todo : allTodos){
             TodoState state = todo.getState().getData();
-            if(state.getOwner().getName().equals(myLegalName))
+            if(state.getOwner().getName().equals(myLegalName) && !state.getAssignee().getName().equals(myLegalName))
                 filtered.add(todo);
         }
         return filtered;
