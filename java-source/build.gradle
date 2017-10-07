@@ -1,11 +1,3 @@
-apply plugin: 'java'
-apply plugin: 'kotlin'
-apply plugin: 'idea'
-apply plugin: 'net.corda.plugins.publish-utils'
-apply plugin: 'net.corda.plugins.cordformation'
-apply plugin: 'net.corda.plugins.quasar-utils'
-apply plugin: 'maven-publish'
-
 repositories {
     mavenLocal()
     jcenter()
@@ -14,6 +6,14 @@ repositories {
     maven { url 'https://dl.bintray.com/kotlin/exposed' }
     maven { url 'https://jitpack.io' }
 }
+
+apply plugin: 'java'
+apply plugin: 'kotlin'
+apply plugin: 'idea'
+apply plugin: 'net.corda.plugins.publish-utils'
+apply plugin: 'net.corda.plugins.cordformation'
+apply plugin: 'net.corda.plugins.quasar-utils'
+apply plugin: 'maven-publish'
 
 sourceSets {
     main {
@@ -33,15 +33,15 @@ dependencies {
     testCompile "junit:junit:$junit_version"
 
     // Corda integration dependencies
-    compile "net.corda:corda-core:$corda_release_version"
-    compile "net.corda:corda-finance:$corda_release_version"
-    compile "net.corda:corda-jackson:$corda_release_version"
-    compile "net.corda:corda-rpc:$corda_release_version"
-    compile "net.corda:corda-webserver-impl:$corda_release_version"
-    runtime "net.corda:corda:$corda_release_version"
-    runtime "net.corda:corda-webserver:$corda_release_version"
+    cordaCompile "net.corda:corda-core:$corda_release_version"
+    cordaCompile "net.corda:corda-finance:$corda_release_version"
+    cordaCompile "net.corda:corda-jackson:$corda_release_version"
+    cordaCompile "net.corda:corda-rpc:$corda_release_version"
+    cordaCompile "net.corda:corda-webserver-impl:$corda_release_version"
+    cordaRuntime "net.corda:corda:$corda_release_version"
+    cordaRuntime "net.corda:corda-webserver:$corda_release_version"
 
-    testCompile "net.corda:corda-test-utils:$corda_release_version"
+    testCompile "net.corda:corda-node-driver:$corda_release_version"
 
     // GraphStream: For visualisation (required by ExampleClientRPC app)
     compile "org.graphstream:gs-core:1.3"
@@ -54,35 +54,44 @@ dependencies {
 
     // CorDapp dependencies
     // Specify your cordapp's dependencies below, including dependent cordapps
+    cordapp "net.corda:corda-finance:$corda_release_version"
 }
 
 task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
     directory "./build/nodes"
-    networkMap "CN=Controller,O=R3,OU=corda,L=London,C=UK"
+    networkMap "O=Controller,L=London,C=GB"
     node {
-        name "CN=Controller,O=R3,OU=corda,L=London,C=UK"
+        name "O=Controller,L=London,C=GB"
         advertisedServices = ["corda.notary.validating"]
         p2pPort 10002
         rpcPort 10003
-        webPort 10004
-        cordapps = []
+        cordapps = ["net.corda:corda-finance:$corda_release_version"]
     }
     node {
-        name "CN=NodeA,O=NodeA,L=London,C=UK"
+        name "O=PartyA,L=London,C=GB"
         advertisedServices = []
         p2pPort 10005
         rpcPort 10006
         webPort 10007
-        cordapps = []
+        cordapps = ["net.corda:corda-finance:$corda_release_version"]
         rpcUsers = [[ user: "user1", "password": "test", "permissions": []]]
     }
     node {
-        name "CN=NodeB,O=NodeB,L=New York,C=US"
+        name "O=PartyB,L=New York,C=US"
         advertisedServices = []
         p2pPort 10008
         rpcPort 10009
         webPort 10010
-        cordapps = []
+        cordapps = ["net.corda:corda-finance:$corda_release_version"]
+        rpcUsers = [[ user: "user1", "password": "test", "permissions": []]]
+    }
+    node {
+        name "O=PartyC,L=Paris,C=FR"
+        advertisedServices = []
+        p2pPort 10011
+        rpcPort 10012
+        webPort 10013
+        cordapps = ["net.corda:corda-finance:$corda_release_version"]
         rpcUsers = [[ user: "user1", "password": "test", "permissions": []]]
     }
 }
