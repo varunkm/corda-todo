@@ -13,7 +13,7 @@
     <!-- Compiled and minified JavaScript -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.1/js/materialize.min.js"></script>
     <nav class="nav-extended">
-        <div class="nav-wrapper container">
+        <div id="navbar" class="nav-wrapper container">
 
             <a href="#" class="brand-logo">Corda Todo</a>
 
@@ -24,10 +24,10 @@
         <div class="row"></div>
         <div class="row ">
             <div id="myItems" class="col s4 ">
-                <h6 class="grey-text">My Todo</h6>
+                <h6 class="grey-text">Items Assigned to Me</h6>
             </div>
             <div id="myOwned" class="col s4">
-                <h6 class="grey-text">My Assigned Items</h6>
+                <h6 class="grey-text">Items Assigned to Others by Me</h6>
             </div>
             <div id="myComplete" class="col s4">
                 <h6 class="grey-text">My Completed Items</h6>
@@ -54,7 +54,7 @@
                         <div class="row">
                             <div class="input-field col s12">
                                 <textarea name="description" id="description" class="materialize-textarea"></textarea>
-                                <label for="description">Title</label>
+                                <label for="description">Description</label>
                             </div>
                         </div>
                         <div class="row">
@@ -80,6 +80,26 @@
         </div>
     </div>
 
+    <!-- GET MY NAME AND STORE IT, DISPLAY IT IN NAVBAR -->
+    <script>
+        var url = '/api/todo/me';
+        var my_name = '';
+        $.ajax({
+            type: 'GET',
+            url: url,
+            async: false,
+            dataType: 'json',
+            success: function(json) {
+                console.log(json);
+                my_name = json.me;
+            },
+            error: function(e) {
+                console.log(e.message);
+            }
+        });
+        var nav_name = '<a href="#" class="brand-logo right">'+my_name+'</a>';
+        $("#navbar").append(nav_name);
+    </script>
     <script type="text/javascript">
         var url = '/api/todo/peers';
 
